@@ -1,0 +1,476 @@
+{
+  "name": "AI E-Commerce Data Analyst",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        64
+      ],
+      "id": "54ca366c-287c-494c-817c-f79b00c0506f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# Get all 675 input rows\ndata = [item[\"json\"] for item in _items]\n\ncleaned_data = []\nseen_orders = set()\n\nfor row in data:\n\n    # -----------------------------\n    # 1. Clean text values\n    # -----------------------------\n    for key, value in row.items():\n        if isinstance(value, str):\n            row[key] = value.strip()\n\n    # -----------------------------\n    # 2. Remove duplicate orders\n    # -----------------------------\n    order_id = row.get(\"Order_ID\")\n\n    if order_id in seen_orders:\n        continue\n\n    seen_orders.add(order_id)\n\n    # -----------------------------\n    # 3. Convert numeric values\n    # -----------------------------\n    try:\n        quantity = float(row.get(\"Quantity\", 0) or 0)\n    except:\n        quantity = 0\n\n    try:\n        unit_price = float(row.get(\"Unit_Price\", 0) or 0)\n    except:\n        unit_price = 0\n\n    # -----------------------------\n    # 4. Find discount column\n    # -----------------------------\n    discount = 0\n\n    for key, value in row.items():\n        if \"Discount\" in key:\n            try:\n                discount = float(value or 0)\n            except:\n                discount = 0\n            break\n\n    # -----------------------------\n    # 5. Calculate sales\n    # -----------------------------\n    gross_sales = quantity * unit_price\n\n    discount_amount = gross_sales * (discount / 100)\n\n    net_sales = gross_sales - discount_amount\n\n    # -----------------------------\n    # 6. Add calculated fields\n    # -----------------------------\n    row[\"Gross_Sales\"] = round(gross_sales, 2)\n    row[\"Discount_Amount\"] = round(discount_amount, 2)\n    row[\"Net_Sales\"] = round(net_sales, 2)\n\n    # -----------------------------\n    # 7. Add cleaned numeric values\n    # -----------------------------\n    row[\"Quantity\"] = quantity\n    row[\"Unit_Price\"] = unit_price\n    row[\"Discount_Percentage\"] = discount\n\n    cleaned_data.append({\n        \"json\": row\n    })\n\nreturn cleaned_data"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        -160
+      ],
+      "id": "d272808f-6d25-4ac6-8834-4e8fa86525f5",
+      "name": "Code in Python"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# Get all input items from the previous node\nitems = _items\n\n# Store the ecommerce rows\nrows = []\n\nfor item in items:\n    data = item.get(\"json\", {})\n    rows.append(data)\n\n# Return everything as ONE item\nreturn [\n    {\n        \"json\": {\n            \"rows\": rows,\n            \"total_records\": len(rows)\n        }\n    }\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        -144
+      ],
+      "id": "ddcdabbd-8aef-4268-a055-6e2b09c73e01",
+      "name": "Code in Python1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an e-commerce business analyst.\n\nAnalyze the e-commerce analytics data provided to you.\n\nProvide concise business insights for a dashboard.\n\nFocus on:\n\n1. Overall business performance\n2. Sales performance\n3. Customer/order problems\n4. Top-performing products\n5. Top-performing categories\n6. Best sales channel\n7. Best payment method\n8. Return and cancellation risks\n9. Business opportunities\n10. Actionable recommendations\n\nReturn ONLY valid JSON in this exact structure:\n\n{\n  \"summary\": \"Short overall business summary\",\n  \"key_findings\": [\n    \"Finding 1\",\n    \"Finding 2\",\n    \"Finding 3\"\n  ],\n  \"risks\": [\n    \"Risk 1\",\n    \"Risk 2\"\n  ],\n  \"opportunities\": [\n    \"Opportunity 1\",\n    \"Opportunity 2\"\n  ],\n  \"recommendations\": [\n    \"Recommendation 1\",\n    \"Recommendation 2\",\n    \"Recommendation 3\"\n  ]\n}\n\nDo not use markdown.\nDo not use ```json.\nKeep each point short and business-focused.\n\nHere is the analytics data:\n\n{{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1568,
+        16
+      ],
+      "id": "27e17ca9-f22f-46c4-b0c9-e0d350fdf1df",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.6-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1632,
+        256
+      ],
+      "id": "be3740a5-1ced-4724-95d5-9d59b5e6099b",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "output",
+        "options": {
+          "fileName": "ecommerce_ai_analysis_report.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        -160
+      ],
+      "id": "d5bf29a7-1cd6-4467-87b6-0162cf3133bc",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "name": "ecommerce_ai_analysis_report.txt",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2384,
+        -128
+      ],
+      "id": "23c066ae-31ea-486d-b296-1356488d7ae6",
+      "name": "Upload file"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        64
+      ],
+      "id": "63fdf045-2343-408e-bb46-373aa82eb145",
+      "name": "Download file"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "# Get KPI data from Code in Python1\nkpi = _items[0][\"json\"]\n\n# -----------------------------\n# KPI SUMMARY\n# -----------------------------\n\ndashboard = []\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Total Orders\",\n    \"Value\": kpi.get(\"Total_Orders\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Total Quantity Sold\",\n    \"Value\": kpi.get(\"Total_Quantity_Sold\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Gross Sales\",\n    \"Value\": kpi.get(\"Gross_Sales\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Total Discount\",\n    \"Value\": kpi.get(\"Total_Discount\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Net Sales\",\n    \"Value\": kpi.get(\"Net_Sales\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Average Order Value\",\n    \"Value\": kpi.get(\"Average_Order_Value\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Returned Orders\",\n    \"Value\": kpi.get(\"Returned_Orders\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Completed Orders\",\n    \"Value\": kpi.get(\"Completed_Orders\", 0)\n})\n\ndashboard.append({\n    \"Section\": \"KPI\",\n    \"Metric\": \"Return Rate %\",\n    \"Value\": kpi.get(\"Return_Rate_Percentage\", 0)\n})\n\n# -----------------------------\n# TOP PERFORMERS\n# -----------------------------\n\ndashboard.append({\n    \"Section\": \"Top Performer\",\n    \"Metric\": \"Top Category\",\n    \"Value\": kpi.get(\"Top_Category\", \"\")\n})\n\ndashboard.append({\n    \"Section\": \"Top Performer\",\n    \"Metric\": \"Top Product\",\n    \"Value\": kpi.get(\"Top_Product\", \"\")\n})\n\ndashboard.append({\n    \"Section\": \"Top Performer\",\n    \"Metric\": \"Top Sales Channel\",\n    \"Value\": kpi.get(\"Top_Sales_Channel\", \"\")\n})\n\n# -----------------------------\n# CATEGORY SALES\n# -----------------------------\n\nfor category, sales in kpi.get(\"Sales_By_Category\", {}).items():\n\n    dashboard.append({\n        \"Section\": \"Category Sales\",\n        \"Metric\": category,\n        \"Value\": sales\n    })\n\n# -----------------------------\n# PRODUCT SALES\n# -----------------------------\n\nfor product, sales in kpi.get(\"Sales_By_Product\", {}).items():\n\n    dashboard.append({\n        \"Section\": \"Product Sales\",\n        \"Metric\": product,\n        \"Value\": sales\n    })\n\n# -----------------------------\n# CHANNEL SALES\n# -----------------------------\n\nfor channel, sales in kpi.get(\"Sales_By_Channel\", {}).items():\n\n    dashboard.append({\n        \"Section\": \"Channel Sales\",\n        \"Metric\": channel,\n        \"Value\": sales\n    })\n\n# -----------------------------\n# PAYMENT SALES\n# -----------------------------\n\nfor payment, sales in kpi.get(\"Sales_By_Payment_Method\", {}).items():\n\n    dashboard.append({\n        \"Section\": \"Payment Sales\",\n        \"Metric\": payment,\n        \"Value\": sales\n    })\n\n# Return Excel-ready rows\nreturn [\n    {\n        \"json\": row\n    }\n    for row in dashboard\n]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        400
+      ],
+      "id": "8101eb5b-5e8d-4e0f-96e3-019a981f5af8",
+      "name": "Code in Python2"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "fileName": "ecommerce_kpi_dashboard.xlsx"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1456,
+        400
+      ],
+      "id": "50134161-118b-4465-af99-5dfe28c43924",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "name": "ecommerce_kpi_dashboard.xlsx",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1776,
+        400
+      ],
+      "id": "ac6da1ad-d59e-4975-a2c3-19078f56dfcf",
+      "name": "Upload file1"
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\n<title>E-Commerce Analytics Dashboard</title>\n\n<style>\n\n*{\n    box-sizing:border-box;\n}\n\nbody{\n    margin:0;\n    padding:24px;\n    font-family:Arial,Helvetica,sans-serif;\n    background:#eef3f9;\n    color:#172033;\n}\n\n.dashboard{\n    max-width:1450px;\n    margin:auto;\n}\n\n/* HEADER */\n\n.header{\n    background:linear-gradient(135deg,#172554,#2563eb);\n    color:white;\n    padding:28px 32px;\n    border-radius:20px;\n    margin-bottom:20px;\n    box-shadow:0 8px 25px rgba(37,99,235,.20);\n}\n\n.header-row{\n    display:flex;\n    justify-content:space-between;\n    align-items:center;\n    gap:20px;\n}\n\n.header h1{\n    margin:0 0 8px;\n    font-size:30px;\n}\n\n.header p{\n    margin:0;\n    opacity:.9;\n}\n\n.live{\n    background:rgba(255,255,255,.18);\n    padding:12px 18px;\n    border-radius:25px;\n    white-space:nowrap;\n}\n\n/* FILTERS */\n\n.card{\n    background:white;\n    border-radius:18px;\n    padding:22px;\n    margin-bottom:18px;\n    box-shadow:0 4px 15px rgba(15,23,42,.06);\n}\n\n.filter-grid{\n    display:grid;\n    grid-template-columns:repeat(5,1fr);\n    gap:16px;\n}\n\n.filter label{\n    display:block;\n    font-size:13px;\n    font-weight:bold;\n    margin-bottom:7px;\n}\n\nselect{\n    width:100%;\n    padding:11px 12px;\n    border:1px solid #cbd5e1;\n    border-radius:10px;\n    background:white;\n    font-size:14px;\n}\n\n.reset{\n    margin-top:18px;\n    padding:11px 18px;\n    border:0;\n    border-radius:10px;\n    background:#2563eb;\n    color:white;\n    cursor:pointer;\n    font-weight:bold;\n}\n\n.reset:hover{\n    background:#1d4ed8;\n}\n\n/* KPI */\n\n.kpi-grid{\n    display:grid;\n    grid-template-columns:repeat(4,1fr);\n    gap:16px;\n    margin-bottom:18px;\n}\n\n.kpi{\n    background:white;\n    padding:22px;\n    border-radius:18px;\n    box-shadow:0 4px 15px rgba(15,23,42,.06);\n}\n\n.kpi-title{\n    font-size:13px;\n    color:#64748b;\n    font-weight:bold;\n    text-transform:uppercase;\n}\n\n.kpi-value{\n    font-size:25px;\n    font-weight:bold;\n    margin-top:10px;\n    color:#172554;\n}\n\n.kpi-sub{\n    color:#94a3b8;\n    font-size:12px;\n    margin-top:6px;\n}\n\n/* CHART GRID */\n\n.chart-grid{\n    display:grid;\n    grid-template-columns:2fr 1fr;\n    gap:18px;\n}\n\n.chart-card{\n    background:white;\n    border-radius:18px;\n    padding:22px;\n    box-shadow:0 4px 15px rgba(15,23,42,.06);\n    margin-bottom:18px;\n}\n\n.chart-title{\n    font-size:19px;\n    font-weight:bold;\n    margin-bottom:5px;\n}\n\n.chart-subtitle{\n    font-size:12px;\n    color:#94a3b8;\n    margin-bottom:18px;\n}\n\n/* LINE CHART */\n\n.line-chart{\n    width:100%;\n    height:280px;\n    position:relative;\n}\n\n.line-svg{\n    width:100%;\n    height:240px;\n    overflow:visible;\n}\n\n.axis-label{\n    font-size:11px;\n    fill:#64748b;\n}\n\n/* BARS */\n\n.bar-row{\n    margin-bottom:16px;\n}\n\n.bar-header{\n    display:flex;\n    justify-content:space-between;\n    font-size:13px;\n    margin-bottom:6px;\n}\n\n.bar-name{\n    font-weight:bold;\n}\n\n.bar-value{\n    color:#475569;\n}\n\n.bar-background{\n    width:100%;\n    height:12px;\n    background:#e2e8f0;\n    border-radius:20px;\n    overflow:hidden;\n}\n\n.bar-fill{\n    height:100%;\n    border-radius:20px;\n    background:linear-gradient(90deg,#2563eb,#60a5fa);\n}\n\n/* STATUS */\n\n.status-grid{\n    display:grid;\n    grid-template-columns:repeat(4,1fr);\n    gap:12px;\n}\n\n.status-box{\n    padding:18px 10px;\n    border-radius:14px;\n    text-align:center;\n}\n\n.status-number{\n    font-size:25px;\n    font-weight:bold;\n}\n\n.status-label{\n    font-size:12px;\n    margin-top:5px;\n}\n\n/* DONUT */\n\n.donut-area{\n    display:flex;\n    align-items:center;\n    justify-content:center;\n    gap:30px;\n    min-height:250px;\n}\n\n.donut{\n    width:180px;\n    height:180px;\n    border-radius:50%;\n    position:relative;\n}\n\n.donut::after{\n    content:\"\";\n    position:absolute;\n    width:100px;\n    height:100px;\n    background:white;\n    border-radius:50%;\n    top:40px;\n    left:40px;\n}\n\n.legend{\n    font-size:13px;\n}\n\n.legend-item{\n    display:flex;\n    align-items:center;\n    margin:10px 0;\n}\n\n.legend-color{\n    width:12px;\n    height:12px;\n    border-radius:3px;\n    margin-right:8px;\n}\n\n/* PERFORMERS */\n\n.performer-grid{\n    display:grid;\n    grid-template-columns:repeat(4,1fr);\n    gap:15px;\n}\n\n.performer{\n    background:#f8fafc;\n    padding:18px;\n    border-radius:14px;\n    border-left:4px solid #2563eb;\n}\n\n.performer-title{\n    color:#64748b;\n    font-size:12px;\n}\n\n.performer-value{\n    margin-top:8px;\n    font-size:17px;\n    font-weight:bold;\n}\n\n/* FOOTER */\n\n.footer{\n    text-align:center;\n    padding:25px;\n    color:#94a3b8;\n    font-size:12px;\n}\n\n/* RESPONSIVE */\n\n@media(max-width:1000px){\n\n    .filter-grid{\n        grid-template-columns:repeat(2,1fr);\n    }\n\n    .kpi-grid{\n        grid-template-columns:repeat(2,1fr);\n    }\n\n    .chart-grid{\n        grid-template-columns:1fr;\n    }\n\n    .performer-grid{\n        grid-template-columns:repeat(2,1fr);\n    }\n}\n\n@media(max-width:600px){\n\n    body{\n        padding:12px;\n    }\n\n    .filter-grid{\n        grid-template-columns:1fr;\n    }\n\n    .kpi-grid{\n        grid-template-columns:1fr;\n    }\n\n    .performer-grid{\n        grid-template-columns:1fr;\n    }\n\n    .status-grid{\n        grid-template-columns:repeat(2,1fr);\n    }\n\n    .header-row{\n        flex-direction:column;\n        align-items:flex-start;\n    }\n\n}\n\n\n/* AI ANALYSIS */\n.ai-section{margin-top:18px;}\n.ai-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;}\n.ai-badge{background:#ede9fe;color:#6d28d9;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}\n.ai-health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:4px 0 18px;}\n.ai-health-card{background:#f8fafc;border-radius:14px;padding:17px;border:1px solid #e2e8f0;}\n.ai-health-label{font-size:11px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:.4px;}\n.ai-health-value{font-size:22px;font-weight:800;color:#172554;margin-top:7px;}\n.ai-risk-value{font-size:22px;font-weight:800;margin-top:7px;color:#64748b;}\n.ai-health-note{font-size:11px;color:#94a3b8;margin-top:5px;line-height:1.4;}\n.ai-progress{height:8px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:10px;}\n.ai-progress>div{height:100%;width:0%;border-radius:20px;background:#2563eb;transition:width .35s ease;}\n.ai-summary{background:#f8fafc;border-radius:14px;padding:20px;margin-bottom:18px;border-left:4px solid #2563eb;}\n.ai-summary h3{margin-top:0;margin-bottom:10px;}\n.ai-summary p{margin:0;line-height:1.7;color:#475569;}\n.ai-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}\n.ai-box{padding:20px;border-radius:14px;background:#f8fafc;}\n.ai-box h3{margin-top:0;margin-bottom:12px;}\n.ai-box ul{margin:0;padding-left:20px;}\n.ai-box li{margin-bottom:9px;line-height:1.5;color:#475569;}\n.findings{border-left:4px solid #2563eb;}\n.risks{border-left:4px solid #dc2626;}\n.opportunities{border-left:4px solid #16a34a;}\n.recommendations{border-left:4px solid #9333ea;}\n.ai-footer-note{display:flex;justify-content:space-between;gap:12px;margin-top:14px;color:#94a3b8;font-size:11px;}\n@media(max-width:1000px){.ai-health-grid{grid-template-columns:repeat(2,1fr);}}\n@media(max-width:700px){.ai-grid{grid-template-columns:1fr;}.ai-head{flex-direction:column;}.ai-health-grid{grid-template-columns:1fr 1fr;}.ai-footer-note{flex-direction:column;}}\n@media(max-width:500px){.ai-health-grid{grid-template-columns:1fr;}}\n\n/* ANOMALY + EXPORT TOOLS */\n.dashboard-tools{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:0 0 18px;}\n.tool-btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;font-size:13px;}\n.tool-btn.primary{background:#2563eb;color:white;}\n.tool-btn.secondary{background:#e2e8f0;color:#172554;}\n.tool-btn:hover{opacity:.9;}\n.anomaly-card{margin-top:18px;background:#f8fafc;border-radius:14px;padding:20px;border-left:4px solid #f59e0b;}\n.anomaly-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}\n.anomaly-count{background:#fef3c7;color:#92400e;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;}\n.anomaly-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}\n.anomaly-item{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px;}\n.anomaly-item strong{display:block;color:#172554;margin-bottom:4px;}\n.anomaly-item span{font-size:12px;color:#64748b;line-height:1.5;}\n.anomaly-empty{color:#16a34a;font-weight:700;}\n@media(max-width:700px){.anomaly-list{grid-template-columns:1fr;}.dashboard-tools{justify-content:flex-start;}}\n@media print{body{background:white;padding:0;}.dashboard-tools,.reset,.live{display:none !important;}.card,.chart-card,.kpi,.performer{box-shadow:none;border:1px solid #e2e8f0;}.header{break-inside:avoid;}}\n</style>\n</head>\n\n\n<body>\n\n<div class=\"dashboard\">\n\n<!-- HEADER -->\n\n<div class=\"header\">\n\n    <div class=\"header-row\">\n\n        <div>\n            <h1>📊 E-Commerce Analytics Dashboard</h1>\n\n            <p>\n                Interactive Business Intelligence Dashboard\n                • n8n + Python + JavaScript\n            </p>\n        </div>\n\n        <div class=\"live\">\n            ● LIVE\n        </div>\n\n    </div>\n\n</div>\n\n\n<!-- FILTERS -->\n\n<div class=\"card\">\n\n    <h2>🎛️ Dashboard Filters</h2>\n\n    <div class=\"filter-grid\">\n\n        <div class=\"filter\">\n\n            <label>Month</label>\n\n            <select id=\"monthFilter\">\n                <option value=\"\">All Months</option>\n            </select>\n\n        </div>\n\n\n        <div class=\"filter\">\n\n            <label>Category</label>\n\n            <select id=\"categoryFilter\">\n                <option value=\"\">All Categories</option>\n            </select>\n\n        </div>\n\n\n        <div class=\"filter\">\n\n            <label>Sales Channel</label>\n\n            <select id=\"channelFilter\">\n                <option value=\"\">All Channels</option>\n            </select>\n\n        </div>\n\n\n        <div class=\"filter\">\n\n            <label>Payment Method</label>\n\n            <select id=\"paymentFilter\">\n                <option value=\"\">All Payments</option>\n            </select>\n\n        </div>\n\n\n        <div class=\"filter\">\n\n            <label>Order Status</label>\n\n            <select id=\"statusFilter\">\n                <option value=\"\">All Statuses</option>\n            </select>\n\n        </div>\n\n    </div>\n\n\n    <button class=\"reset\" onclick=\"resetFilters()\">\n        ↻ Reset Filters\n    </button>\n\n</div>\n\n\n<!-- DASHBOARD TOOLS -->\n<div class=\"dashboard-tools\">\n    <button class=\"tool-btn primary\" onclick=\"exportFilteredCSV()\">⬇️ Export Filtered CSV</button>\n    <button class=\"tool-btn secondary\" onclick=\"printDashboardReport()\">🖨️ Print / Save Report</button>\n</div>\n\n<!-- KPI -->\n\n<div class=\"kpi-grid\">\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Net Sales\n        </div>\n\n        <div class=\"kpi-value\" id=\"netSales\">\n            ₹0\n        </div>\n\n        <div class=\"kpi-sub\">\n            Filtered revenue\n        </div>\n\n    </div>\n\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Orders\n        </div>\n\n        <div class=\"kpi-value\" id=\"orders\">\n            0\n        </div>\n\n        <div class=\"kpi-sub\">\n            Filtered orders\n        </div>\n\n    </div>\n\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Quantity\n        </div>\n\n        <div class=\"kpi-value\" id=\"quantity\">\n            0\n        </div>\n\n        <div class=\"kpi-sub\">\n            Units sold\n        </div>\n\n    </div>\n\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Average Order Value\n        </div>\n\n        <div class=\"kpi-value\" id=\"aov\">\n            ₹0\n        </div>\n\n        <div class=\"kpi-sub\">\n            Sales ÷ orders\n        </div>\n\n    </div>\n\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Gross Sales\n        </div>\n\n        <div class=\"kpi-value\" id=\"grossSales\">\n            ₹0\n        </div>\n\n        <div class=\"kpi-sub\">\n            Before discounts\n        </div>\n\n    </div>\n\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Discount\n        </div>\n\n        <div class=\"kpi-value\" id=\"discount\">\n            ₹0\n        </div>\n\n        <div class=\"kpi-sub\">\n            Discount amount\n        </div>\n\n    </div>\n\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Return Rate\n        </div>\n\n        <div class=\"kpi-value\" id=\"returnRate\">\n            0%\n        </div>\n\n        <div class=\"kpi-sub\">\n            Returned orders\n        </div>\n\n    </div>\n\n\n    <div class=\"kpi\">\n\n        <div class=\"kpi-title\">\n            Cancellation Rate\n        </div>\n\n        <div class=\"kpi-value\" id=\"cancelRate\">\n            0%\n        </div>\n\n        <div class=\"kpi-sub\">\n            Cancelled orders\n        </div>\n\n    </div>\n\n</div>\n\n\n<!-- SALES TREND + STATUS -->\n\n<div class=\"chart-grid\">\n\n    <div class=\"chart-card\">\n\n        <div class=\"chart-title\">\n            📈 Monthly Sales Trend\n        </div>\n\n        <div class=\"chart-subtitle\">\n            Net sales for the selected data\n        </div>\n\n        <div class=\"line-chart\">\n\n            <svg\n                id=\"salesChart\"\n                class=\"line-svg\"\n                viewBox=\"0 0 900 250\"\n                preserveAspectRatio=\"none\">\n            </svg>\n\n        </div>\n\n    </div>\n\n\n    <div class=\"chart-card\">\n\n        <div class=\"chart-title\">\n            📦 Order Status\n        </div>\n\n        <div class=\"chart-subtitle\">\n            Current order distribution\n        </div>\n\n        <div id=\"statusChart\"\n             class=\"donut-area\">\n        </div>\n\n    </div>\n\n</div>\n\n\n<!-- PRODUCT + CATEGORY -->\n\n<div class=\"chart-grid\">\n\n    <div class=\"chart-card\">\n\n        <div class=\"chart-title\">\n            🏆 Top 5 Products\n        </div>\n\n        <div class=\"chart-subtitle\">\n            Products ranked by net sales\n        </div>\n\n        <div id=\"productChart\"></div>\n\n    </div>\n\n\n    <div class=\"chart-card\">\n\n        <div class=\"chart-title\">\n            🏷️ Sales by Category\n        </div>\n\n        <div class=\"chart-subtitle\">\n            Category performance\n        </div>\n\n        <div id=\"categoryChart\"></div>\n\n    </div>\n\n</div>\n\n\n<!-- CHANNEL -->\n\n<div class=\"chart-card\">\n\n    <div class=\"chart-title\">\n        🌐 Sales by Channel\n    </div>\n\n    <div class=\"chart-subtitle\">\n        Net sales distribution across channels\n    </div>\n\n    <div id=\"channelChart\"></div>\n\n</div>\n\n\n<!-- PERFORMERS -->\n\n<div class=\"chart-card\">\n\n    <div class=\"chart-title\">\n        ⭐ Top Performers\n    </div>\n\n    <div class=\"chart-subtitle\">\n        Best performing dimensions\n    </div>\n\n\n    <div class=\"performer-grid\">\n\n        <div class=\"performer\">\n\n            <div class=\"performer-title\">\n                Top Category\n            </div>\n\n            <div class=\"performer-value\"\n                 id=\"topCategory\">\n                -\n            </div>\n\n        </div>\n\n\n        <div class=\"performer\">\n\n            <div class=\"performer-title\">\n                Top Product\n            </div>\n\n            <div class=\"performer-value\"\n                 id=\"topProduct\">\n                -\n            </div>\n\n        </div>\n\n\n        <div class=\"performer\">\n\n            <div class=\"performer-title\">\n                Top Channel\n            </div>\n\n            <div class=\"performer-value\"\n                 id=\"topChannel\">\n                -\n            </div>\n\n        </div>\n\n\n        <div class=\"performer\">\n\n            <div class=\"performer-title\">\n                Top Payment\n            </div>\n\n            <div class=\"performer-value\"\n                 id=\"topPayment\">\n                -\n            </div>\n\n        </div>\n\n    </div>\n\n</div>\n\n\n<!-- AI ANALYSIS -->\n<div class=\"chart-card ai-section\">\n  <div class=\"ai-head\">\n    <div>\n      <div class=\"chart-title\">🤖 AI Business Analysis</div>\n      <div class=\"chart-subtitle\">Automated business analysis generated by Gemini AI</div>\n    </div>\n    <div class=\"ai-badge\">GEMINI AI</div>\n  </div>\n\n  <div class=\"ai-health-grid\">\n    <div class=\"ai-health-card\">\n      <div class=\"ai-health-label\">Business Health</div>\n      <div class=\"ai-health-value\" id=\"aiHealthScore\">0/100</div>\n      <div class=\"ai-progress\"><div id=\"aiHealthBar\"></div></div>\n      <div class=\"ai-health-note\" id=\"aiHealthNote\">Calculating from selected data...</div>\n    </div>\n    <div class=\"ai-health-card\">\n      <div class=\"ai-health-label\">Risk Level</div>\n      <div class=\"ai-risk-value\" id=\"aiRiskLevel\">—</div>\n      <div class=\"ai-health-note\">Based on return + cancellation rate</div>\n    </div>\n    <div class=\"ai-health-card\">\n      <div class=\"ai-health-label\">Filtered Revenue</div>\n      <div class=\"ai-health-value\" id=\"aiRevenue\">₹0</div>\n      <div class=\"ai-health-note\">Net sales for selected filters</div>\n    </div>\n    <div class=\"ai-health-card\">\n      <div class=\"ai-health-label\">Data Records</div>\n      <div class=\"ai-health-value\" id=\"aiRecords\">0</div>\n      <div class=\"ai-health-note\">Rows used for this view</div>\n    </div>\n  </div>\n\n  <div class=\"ai-summary\">\n    <h3>📌 Executive Summary</h3>\n    <p id=\"aiSummary\">Loading AI analysis...</p>\n  </div>\n\n  <div class=\"ai-grid\">\n    <div class=\"ai-box findings\"><h3>🔎 Key Findings</h3><ul id=\"aiFindings\"></ul></div>\n    <div class=\"ai-box risks\"><h3>⚠️ Risks</h3><ul id=\"aiRisks\"></ul></div>\n    <div class=\"ai-box opportunities\"><h3>💡 Opportunities</h3><ul id=\"aiOpportunities\"></ul></div>\n    <div class=\"ai-box recommendations\"><h3>🎯 Priority Recommendations</h3><ul id=\"aiRecommendations\"></ul></div>\n  </div>\n\n  <div class=\"anomaly-card\">\n    <div class=\"anomaly-head\">\n      <div>\n        <h3 style=\"margin:0 0 4px;\">🚨 Data Anomaly Detection</h3>\n        <div class=\"chart-subtitle\" style=\"margin:0;\">Automatic checks for unusual sales and invalid transaction values</div>\n      </div>\n      <div class=\"anomaly-count\" id=\"anomalyCount\">0 anomalies</div>\n    </div>\n    <div id=\"anomalyList\" class=\"anomaly-list\"></div>\n  </div>\n\n  <div class=\"ai-footer-note\">\n    <span>🧠 AI-generated insights</span>\n    <span id=\"aiConfidence\">AI confidence: Not provided by model</span>\n  </div>\n</div>\n\n<div class=\"footer\">\n\n    E-Commerce Analytics Dashboard<br>\n    Generated automatically by n8n • AI E-Commerce Data Analyst\n\n</div>\n\n</div>\n\n\n<script>\n\n/* ============================================================\n   DATA FROM n8n\n   ============================================================ */\n\nconst rows = {{ JSON.stringify($json.rows || []) }};\n\n/* AI AGENT DATA */\nlet aiData = {};\nconst aiRaw = {{ JSON.stringify($json.output || \"\") }};\ntry {\n  if (typeof aiRaw === \"string\") {\n    let cleaned = aiRaw.trim()\n      .replace(/^```json\\s*/i, \"\")\n      .replace(/^```\\s*/i, \"\")\n      .replace(/\\s*```$/i, \"\")\n      .trim();\n    aiData = JSON.parse(cleaned);\n  } else if (aiRaw && typeof aiRaw === \"object\") {\n    aiData = aiRaw;\n  }\n} catch(error) {\n  console.log(\"AI JSON parsing error:\", error);\n  aiData = {};\n}\n\n\n/* ============================================================\n   HELPER FUNCTIONS\n   ============================================================ */\n\nfunction number(value){\n\n    const n = Number(value);\n\n    return Number.isFinite(n) ? n : 0;\n\n}\n\n\nfunction money(value){\n\n    return new Intl.NumberFormat(\n        \"en-IN\",\n        {\n            style:\"currency\",\n            currency:\"INR\",\n            maximumFractionDigits:2\n        }\n    ).format(number(value));\n\n}\n\n\nfunction integer(value){\n\n    return new Intl.NumberFormat(\n        \"en-IN\"\n    ).format(Math.round(number(value)));\n\n}\n\n\nfunction percentage(value){\n\n    return number(value).toFixed(2) + \"%\";\n\n}\n\n\nfunction getMonth(date){\n\n    if(!date) return \"Unknown\";\n\n    const d = new Date(date);\n\n    if(isNaN(d.getTime())){\n\n        return String(date).substring(0,7);\n\n    }\n\n    return d.toLocaleString(\n        \"en-IN\",\n        {\n            month:\"short\",\n            year:\"numeric\"\n        }\n    );\n\n}\n\n\n/* ============================================================\n   FILTER DATA\n   ============================================================ */\n\nfunction populateFilters(){\n\n    const months = new Set();\n    const categories = new Set();\n    const channels = new Set();\n    const payments = new Set();\n    const statuses = new Set();\n\n\n    rows.forEach(row => {\n\n        months.add(\n            getMonth(row.Order_Date)\n        );\n\n        if(row.Category)\n            categories.add(row.Category);\n\n        if(row.Sales_Channel)\n            channels.add(row.Sales_Channel);\n\n        if(row.Payment_Method)\n            payments.add(row.Payment_Method);\n\n        if(row.Order_Status)\n            statuses.add(row.Order_Status);\n\n    });\n\n\n    fillSelect(\n        \"monthFilter\",\n        [...months].sort()\n    );\n\n    fillSelect(\n        \"categoryFilter\",\n        [...categories].sort()\n    );\n\n    fillSelect(\n        \"channelFilter\",\n        [...channels].sort()\n    );\n\n    fillSelect(\n        \"paymentFilter\",\n        [...payments].sort()\n    );\n\n    fillSelect(\n        \"statusFilter\",\n        [...statuses].sort()\n    );\n\n}\n\n\nfunction fillSelect(id, values){\n\n    const select = document.getElementById(id);\n\n    values.forEach(value => {\n\n        const option =\n            document.createElement(\"option\");\n\n        option.value = value;\n        option.textContent = value;\n\n        select.appendChild(option);\n\n    });\n\n}\n\n\n/* ============================================================\n   GET FILTERED DATA\n   ============================================================ */\n\nfunction getFilteredRows(){\n\n    const month =\n        document.getElementById(\"monthFilter\").value;\n\n    const category =\n        document.getElementById(\"categoryFilter\").value;\n\n    const channel =\n        document.getElementById(\"channelFilter\").value;\n\n    const payment =\n        document.getElementById(\"paymentFilter\").value;\n\n    const status =\n        document.getElementById(\"statusFilter\").value;\n\n\n    return rows.filter(row => {\n\n        const rowMonth =\n            getMonth(row.Order_Date);\n\n\n        return (\n\n            (!month || rowMonth === month)\n\n            &&\n\n            (!category ||\n             row.Category === category)\n\n            &&\n\n            (!channel ||\n             row.Sales_Channel === channel)\n\n            &&\n\n            (!payment ||\n             row.Payment_Method === payment)\n\n            &&\n\n            (!status ||\n             row.Order_Status === status)\n\n        );\n\n    });\n\n}\n\n\n/* ============================================================\n   KPI CALCULATION\n   ============================================================ */\n\nfunction calculateKPIs(data){\n\n    let netSales = 0;\n    let grossSales = 0;\n    let discount = 0;\n    let quantity = 0;\n\n    let returned = 0;\n    let cancelled = 0;\n\n\n    data.forEach(row => {\n\n        netSales += number(row.Net_Sales);\n\n        grossSales += number(row.Gross_Sales);\n\n        discount += number(row.Discount_Amount);\n\n        quantity += number(row.Quantity);\n\n\n        if(\n            String(row.Order_Status)\n            .toLowerCase()\n            === \"returned\"\n        ){\n\n            returned++;\n\n        }\n\n\n        if(\n            String(row.Order_Status)\n            .toLowerCase()\n            === \"cancelled\"\n        ){\n\n            cancelled++;\n\n        }\n\n    });\n\n\n    const orders = data.length;\n\n    const aov =\n        orders > 0\n        ? netSales / orders\n        : 0;\n\n\n    const returnRate =\n        orders > 0\n        ? returned / orders * 100\n        : 0;\n\n\n    const cancelRate =\n        orders > 0\n        ? cancelled / orders * 100\n        : 0;\n\n\n    document.getElementById(\"netSales\")\n        .textContent = money(netSales);\n\n    document.getElementById(\"orders\")\n        .textContent = integer(orders);\n\n    document.getElementById(\"quantity\")\n        .textContent = integer(quantity);\n\n    document.getElementById(\"aov\")\n        .textContent = money(aov);\n\n    document.getElementById(\"grossSales\")\n        .textContent = money(grossSales);\n\n    document.getElementById(\"discount\")\n        .textContent = money(discount);\n\n    document.getElementById(\"returnRate\")\n        .textContent = percentage(returnRate);\n\n    document.getElementById(\"cancelRate\")\n        .textContent = percentage(cancelRate);\n\n}\n\n\n/* ============================================================\n   GROUPING FUNCTION\n   ============================================================ */\n\nfunction groupSales(data, field){\n\n    const result = {};\n\n\n    data.forEach(row => {\n\n        const key =\n            row[field] || \"Unknown\";\n\n\n        if(!result[key])\n            result[key] = 0;\n\n\n        result[key] +=\n            number(row.Net_Sales);\n\n    });\n\n\n    return result;\n\n}\n\n\n/* ============================================================\n   MONTHLY SALES CHART\n   ============================================================ */\n\nfunction renderSalesTrend(data){\n\n    const svg =\n        document.getElementById(\"salesChart\");\n\n    svg.innerHTML = \"\";\n\n\n    const monthly = {};\n\n\n    data.forEach(row => {\n\n        const month =\n            getMonth(row.Order_Date);\n\n\n        if(!monthly[month])\n            monthly[month] = 0;\n\n\n        monthly[month] +=\n            number(row.Net_Sales);\n\n    });\n\n\n    const entries =\n        Object.entries(monthly)\n        .sort((a,b) =>\n            new Date(a[0]) - new Date(b[0])\n        );\n\n\n    if(entries.length === 0){\n\n        svg.innerHTML =\n            `<text x=\"450\" y=\"120\"\n             text-anchor=\"middle\"\n             fill=\"#94a3b8\">\n             No data available\n             </text>`;\n\n        return;\n\n    }\n\n\n    const width = 900;\n    const height = 230;\n\n    const paddingX = 55;\n    const paddingY = 25;\n\n\n    const values =\n        entries.map(x => x[1]);\n\n\n    const max =\n        Math.max(...values,1);\n\n\n    const points =\n        entries.map((entry,index) => {\n\n            const x =\n                paddingX +\n                index *\n                ((width-paddingX*2) /\n                Math.max(entries.length-1,1));\n\n\n            const y =\n                height -\n                paddingY -\n                (entry[1]/max) *\n                (height-paddingY*2);\n\n\n            return {\n                x,\n                y,\n                value:entry[1],\n                label:entry[0]\n            };\n\n        });\n\n\n    /* GRID */\n\n    for(let i=0;i<5;i++){\n\n        const y =\n            paddingY +\n            i *\n            ((height-paddingY*2)/4);\n\n\n        svg.innerHTML +=\n        `<line\n            x1=\"${paddingX}\"\n            y1=\"${y}\"\n            x2=\"${width-paddingX}\"\n            y2=\"${y}\"\n            stroke=\"#e2e8f0\"\n            stroke-width=\"1\"\n        />`;\n\n    }\n\n\n    /* AREA */\n\n    const areaPoints =\n        [\n            `${points[0].x},${height-paddingY}`,\n            ...points.map(p =>\n                `${p.x},${p.y}`\n            ),\n            `${points[points.length-1].x},${height-paddingY}`\n        ].join(\" \");\n\n\n    svg.innerHTML +=\n    `<polygon\n        points=\"${areaPoints}\"\n        fill=\"#dbeafe\"\n        opacity=\"0.7\"\n    />`;\n\n\n    /* LINE */\n\n    const linePoints =\n        points\n        .map(p => `${p.x},${p.y}`)\n        .join(\" \");\n\n\n    svg.innerHTML +=\n    `<polyline\n        points=\"${linePoints}\"\n        fill=\"none\"\n        stroke=\"#2563eb\"\n        stroke-width=\"4\"\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n    />`;\n\n\n    /* POINTS */\n\n    points.forEach(p => {\n\n        svg.innerHTML +=\n        `<circle\n            cx=\"${p.x}\"\n            cy=\"${p.y}\"\n            r=\"5\"\n            fill=\"#2563eb\"\n        />`;\n\n    });\n\n\n    /* LABELS */\n\n    points.forEach((p,index) => {\n\n        if(\n            entries.length <= 12\n            ||\n            index % Math.ceil(entries.length/8) === 0\n            ||\n            index === points.length-1\n        ){\n\n            svg.innerHTML +=\n            `<text\n                x=\"${p.x}\"\n                y=\"220\"\n                text-anchor=\"middle\"\n                class=\"axis-label\"\n            >\n                ${p.label}\n            </text>`;\n\n        }\n\n    });\n\n}\n\n\n/* ============================================================\n   BAR CHART\n   ============================================================ */\n\nfunction renderBars(\n    containerId,\n    data,\n    limit = 10\n){\n\n    const container =\n        document.getElementById(containerId);\n\n\n    const entries =\n        Object.entries(data)\n        .sort((a,b) => b[1]-a[1])\n        .slice(0,limit);\n\n\n    container.innerHTML = \"\";\n\n\n    if(entries.length === 0){\n\n        container.innerHTML =\n            `<p style=\"color:#94a3b8\">\n                No data available\n            </p>`;\n\n        return;\n\n    }\n\n\n    const max =\n        Math.max(...entries.map(x => x[1]),1);\n\n\n    entries.forEach(entry => {\n\n        const name = entry[0];\n        const value = entry[1];\n\n\n        const width =\n            (value/max)*100;\n\n\n        container.innerHTML += `\n\n        <div class=\"bar-row\">\n\n            <div class=\"bar-header\">\n\n                <span class=\"bar-name\">\n                    ${name}\n                </span>\n\n                <span class=\"bar-value\">\n                    ${money(value)}\n                </span>\n\n            </div>\n\n\n            <div class=\"bar-background\">\n\n                <div\n                    class=\"bar-fill\"\n                    style=\"width:${width}%\">\n                </div>\n\n            </div>\n\n        </div>\n\n        `;\n\n    });\n\n}\n\n\n/* ============================================================\n   STATUS CHART\n   ============================================================ */\n\nfunction renderStatusChart(data){\n\n    const container =\n        document.getElementById(\"statusChart\");\n\n\n    const counts = {};\n\n\n    data.forEach(row => {\n\n        const status =\n            row.Order_Status || \"Unknown\";\n\n\n        counts[status] =\n            (counts[status] || 0) + 1;\n\n    });\n\n\n    const entries =\n        Object.entries(counts);\n\n\n    if(entries.length === 0){\n\n        container.innerHTML =\n            \"<p>No data available</p>\";\n\n        return;\n\n    }\n\n\n    const total =\n        entries.reduce(\n            (sum,x) => sum+x[1],\n            0\n        );\n\n\n    const colors = [\n        \"#2563eb\",\n        \"#16a34a\",\n        \"#f97316\",\n        \"#dc2626\",\n        \"#9333ea\",\n        \"#0891b2\"\n    ];\n\n\n    let current = 0;\n\n    const gradients = [];\n\n\n    entries.forEach((entry,index) => {\n\n        const percentage =\n            entry[1]/total*100;\n\n\n        const start = current;\n\n        const end =\n            current + percentage;\n\n\n        gradients.push(\n            `${colors[index % colors.length]}\n             ${start}% ${end}%`\n        );\n\n\n        current = end;\n\n    });\n\n\n    container.innerHTML = `\n\n        <div\n            class=\"donut\"\n            style=\"\n                background:\n                conic-gradient(\n                    ${gradients.join(\",\")}\n                );\n            \">\n        </div>\n\n\n        <div class=\"legend\">\n\n            ${\n                entries.map((entry,index) => `\n\n                    <div class=\"legend-item\">\n\n                        <span\n                            class=\"legend-color\"\n                            style=\"\n                                background:\n                                ${colors[index % colors.length]}\n                            \">\n                        </span>\n\n                        <span>\n                            ${entry[0]}:\n                            ${entry[1]}\n                        </span>\n\n                    </div>\n\n                `).join(\"\")\n            }\n\n        </div>\n\n    `;\n\n}\n\n\n/* ============================================================\n   TOP PERFORMERS\n   ============================================================ */\n\nfunction renderPerformers(data){\n\n    const category =\n        getTop(data,\"Category\");\n\n    const product =\n        getTop(data,\"Product\");\n\n    const channel =\n        getTop(data,\"Sales_Channel\");\n\n    const payment =\n        getTop(data,\"Payment_Method\");\n\n\n    document.getElementById(\"topCategory\")\n        .textContent =\n        category ? category[0] : \"-\";\n\n\n    document.getElementById(\"topProduct\")\n        .textContent =\n        product ? product[0] : \"-\";\n\n\n    document.getElementById(\"topChannel\")\n        .textContent =\n        channel ? channel[0] : \"-\";\n\n\n    document.getElementById(\"topPayment\")\n        .textContent =\n        payment ? payment[0] : \"-\";\n\n}\n\n\nfunction getTop(data,field){\n\n    const grouped =\n        groupSales(data,field);\n\n\n    return Object.entries(grouped)\n        .sort((a,b)=>b[1]-a[1])[0];\n\n}\n\n\n/* AI ANALYSIS + BUSINESS HEALTH */\nfunction calculateBusinessHealth(data){\n  const orders = data.length;\n  if(!orders){\n    return {score:0, risk:\"No Data\", note:\"Select data to calculate business health.\"};\n  }\n\n  let returned=0, cancelled=0;\n  data.forEach(row=>{\n    const status=String(row.Order_Status||\"\").toLowerCase();\n    if(status === \"returned\") returned++;\n    if(status === \"cancelled\") cancelled++;\n  });\n\n  const combinedRate=((returned+cancelled)/orders)*100;\n  const score=Math.max(0, Math.min(100, Math.round(100-(combinedRate*1.5))));\n  let risk=\"Low\";\n  if(combinedRate>=30) risk=\"Critical\";\n  else if(combinedRate>=20) risk=\"High\";\n  else if(combinedRate>=10) risk=\"Medium\";\n\n  const note=`Return + cancellation rate: ${combinedRate.toFixed(2)}%`;\n  return {score,risk,note};\n}\n\nfunction renderBusinessHealth(data){\n  const health=calculateBusinessHealth(data);\n  const netSales=data.reduce((sum,row)=>sum+number(row.Net_Sales),0);\n\n  document.getElementById(\"aiHealthScore\").textContent=`${health.score}/100`;\n  document.getElementById(\"aiHealthBar\").style.width=`${health.score}%`;\n  document.getElementById(\"aiHealthNote\").textContent=health.note;\n  document.getElementById(\"aiRevenue\").textContent=money(netSales);\n  document.getElementById(\"aiRecords\").textContent=integer(data.length);\n\n  const riskEl=document.getElementById(\"aiRiskLevel\");\n  riskEl.textContent=health.risk;\n  riskEl.style.color = health.risk === \"Critical\" ? \"#b91c1c\" :\n                        health.risk === \"High\" ? \"#dc2626\" :\n                        health.risk === \"Medium\" ? \"#d97706\" :\n                        health.risk === \"Low\" ? \"#16a34a\" : \"#64748b\";\n\n  const confidence=aiData.confidence || aiData.ai_confidence || aiData.confidence_score;\n  document.getElementById(\"aiConfidence\").textContent =\n      confidence ? `AI confidence: ${confidence}` : \"AI confidence: Not provided by model\";\n}\n\nfunction renderAIAnalysis(data){\n  document.getElementById(\"aiSummary\").textContent =\n      aiData.summary || \"No AI summary available.\";\n\n  renderAIList(\"aiFindings\", aiData.key_findings);\n  renderAIList(\"aiRisks\", aiData.risks);\n  renderAIList(\"aiOpportunities\", aiData.opportunities);\n  renderAIList(\"aiRecommendations\", aiData.recommendations);\n  renderBusinessHealth(data);\n}\n\nfunction renderAIList(elementId, items){\n  const container=document.getElementById(elementId);\n  container.innerHTML=\"\";\n\n  if(!Array.isArray(items) || items.length===0){\n    container.innerHTML=\"<li>No information available.</li>\";\n    return;\n  }\n\n  items.forEach((item,index)=>{\n    const li=document.createElement(\"li\");\n    let text=\"\";\n    let priority=\"\";\n\n    if(typeof item === \"object\" && item !== null){\n      text=item.text || item.description || item.action || JSON.stringify(item);\n      priority=item.priority || item.urgency || \"\";\n    } else {\n      text=String(item);\n    }\n\n    if(elementId === \"aiRecommendations\") {\n      const label=priority ? ` [${priority}]` : ` [Action ${index+1}]`;\n      text += label;\n    }\n\n    li.textContent=text;\n    container.appendChild(li);\n  });\n}\n\n/* ============================================================\n   ANOMALY DETECTION\n   ============================================================ */\nfunction detectAnomalies(data){\n  const anomalies=[];\n  data.forEach((row,index)=>{\n    const qty=number(row.Quantity);\n    const price=number(row.Unit_Price);\n    const discount=number(row.Discount_Percent ?? row.Discount_Percentage);\n    const net=number(row.Net_Sales);\n    const order=row.Order_ID || `Row ${index+1}`;\n    if(qty < 0) anomalies.push({order,type:\"Negative quantity\",detail:`Quantity = ${qty}`});\n    if(price < 0) anomalies.push({order,type:\"Negative unit price\",detail:`Unit price = ${money(price)}`});\n    if(discount < 0 || discount > 100) anomalies.push({order,type:\"Invalid discount\",detail:`Discount = ${discount}%`});\n    const date=String(row.Order_Date||\"\").trim();\n    if(date && isNaN(new Date(date).getTime())) anomalies.push({order,type:\"Invalid order date\",detail:`Date = ${date}`});\n    if(!Number.isFinite(net)) anomalies.push({order,type:\"Invalid net sales\",detail:\"Net sales is not numeric\"});\n  });\n\n  const sales=data.map(r=>number(r.Net_Sales)).filter(Number.isFinite);\n  if(sales.length>=5){\n    const mean=sales.reduce((a,b)=>a+b,0)/sales.length;\n    const variance=sales.reduce((a,b)=>a+Math.pow(b-mean,2),0)/sales.length;\n    const sd=Math.sqrt(variance);\n    if(sd>0){\n      data.forEach(row=>{\n        const value=number(row.Net_Sales);\n        if(value > mean + 2*sd){\n          anomalies.push({order:row.Order_ID || \"Unknown\",type:\"Unusually high net sales\",detail:`Net sales = ${money(value)}`});\n        }\n      });\n    }\n  }\n  return anomalies;\n}\n\nfunction renderAnomalies(data){\n  const list=document.getElementById(\"anomalyList\");\n  const count=document.getElementById(\"anomalyCount\");\n  if(!list || !count) return;\n  const anomalies=detectAnomalies(data);\n  count.textContent=`${anomalies.length} anomal${anomalies.length===1?\"y\":\"ies\"}`;\n  list.innerHTML=\"\";\n  if(anomalies.length===0){\n    list.innerHTML='<div class=\"anomaly-empty\">✓ No major anomalies detected in the selected data.</div>';\n    return;\n  }\n  anomalies.slice(0,8).forEach(a=>{\n    const div=document.createElement(\"div\");\n    div.className=\"anomaly-item\";\n    div.innerHTML=`<strong>${a.type}</strong><span>${a.order} • ${a.detail}</span>`;\n    list.appendChild(div);\n  });\n  if(anomalies.length>8){\n    const more=document.createElement(\"div\");\n    more.className=\"anomaly-item\";\n    more.innerHTML=`<strong>+ ${anomalies.length-8} more</strong><span>Additional anomalies detected. Export the filtered CSV for detailed investigation.</span>`;\n    list.appendChild(more);\n  }\n}\n\n/* ============================================================\n   EXPORT + REPORT\n   ============================================================ */\nfunction csvEscape(value){\n  const text=String(value ?? \"\");\n  return '\"'+text.replace(/\"/g,'\"\"')+'\"';\n}\n\nfunction exportFilteredCSV(){\n  const data=getFilteredRows();\n  if(!data.length){ alert(\"No data available for the selected filters.\"); return; }\n  const headers=[...new Set(data.flatMap(row=>Object.keys(row)))];\n  const lines=[headers.map(csvEscape).join(\",\")];\n  data.forEach(row=>lines.push(headers.map(h=>csvEscape(row[h])).join(\",\")));\n  const blob=new Blob([\"\\ufeff\"+lines.join(\"\\n\")],{type:\"text/csv;charset=utf-8;\"});\n  const url=URL.createObjectURL(blob);\n  const a=document.createElement(\"a\");\n  a.href=url;\n  a.download=`ecommerce_filtered_${new Date().toISOString().slice(0,10)}.csv`;\n  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);\n}\n\nfunction printDashboardReport(){ window.print(); }\n\n/* ============================================================\n   RENDER DASHBOARD\n   ============================================================ */\n\nfunction renderDashboard(){\n\n    const filtered =\n        getFilteredRows();\n\n\n    calculateKPIs(filtered);\n\n\n    renderSalesTrend(filtered);\n\n\n    renderBars(\n        \"productChart\",\n        groupSales(filtered,\"Product\"),\n        5\n    );\n\n\n    renderBars(\n        \"categoryChart\",\n        groupSales(filtered,\"Category\"),\n        10\n    );\n\n\n    renderBars(\n        \"channelChart\",\n        groupSales(filtered,\"Sales_Channel\"),\n        10\n    );\n\n\n    renderStatusChart(filtered);\n\n\n    renderPerformers(filtered);\n    renderBusinessHealth(filtered);\n    renderAnomalies(filtered);\n\n}\n\n\n/* ============================================================\n   RESET FILTERS\n   ============================================================ */\n\nfunction resetFilters(){\n\n    document.getElementById(\"monthFilter\")\n        .value = \"\";\n\n    document.getElementById(\"categoryFilter\")\n        .value = \"\";\n\n    document.getElementById(\"channelFilter\")\n        .value = \"\";\n\n    document.getElementById(\"paymentFilter\")\n        .value = \"\";\n\n    document.getElementById(\"statusFilter\")\n        .value = \"\";\n\n\n    renderDashboard();\n\n}\n\n\n/* ============================================================\n   FILTER EVENTS\n   ============================================================ */\n\n[\n    \"monthFilter\",\n    \"categoryFilter\",\n    \"channelFilter\",\n    \"paymentFilter\",\n    \"statusFilter\"\n\n].forEach(id => {\n\n    document.getElementById(id)\n        .addEventListener(\n            \"change\",\n            renderDashboard\n        );\n\n});\n\n\n/* ============================================================\n   START\n   ============================================================ */\n\npopulateFilters();\n\nrenderDashboard();\n\nrenderAIAnalysis();\n\n</script>\n\n</body>\n\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        -400
+      ],
+      "id": "78c0f242-3c5a-4099-8f8e-9d0f2785228a",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "operation": "html",
+        "options": {
+          "fileName": "ecommerce_dashboard.html"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1872,
+        -400
+      ],
+      "id": "4fed4312-7cf7-4b57-bb7e-e1267610c74a",
+      "name": "Convert to File2"
+    },
+    {
+      "parameters": {
+        "name": "ecommerce_dashboard ",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2144,
+        -384
+      ],
+      "id": "071e9e13-8b19-4929-8bc1-b612ebddb442",
+      "name": "Upload file2"
+    },
+    {
+      "parameters": {
+        "path": "ecommerce-dashboard",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        64
+      ],
+      "id": "326aa53a-b207-424b-aa07-217910c91066",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        -400
+      ],
+      "id": "37d897ea-a955-4801-8949-02d3ca317012",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1920,
+        -160
+      ],
+      "id": "3c58bcee-329d-4495-b4e7-93cef9a73b1a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1104,
+        -256
+      ],
+      "id": "33827de3-514d-4831-9d71-2cb2eba884df",
+      "name": "Merge1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in Python",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python": {
+      "main": [
+        [
+          {
+            "node": "Code in Python1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in Python2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python2": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Upload file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File2": {
+      "main": [
+        [
+          {
+            "node": "Upload file2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Convert to File2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "879c69c2-5416-4439-a700-214cbc719fdc",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "y33bqJHP2fBmZPzA",
+  "tags": []
+}
