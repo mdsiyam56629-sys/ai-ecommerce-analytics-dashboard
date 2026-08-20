@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>E-Commerce Analytics Dashboard</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    padding:24px;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#eef3f9;
+    color:#172033;
+}
+
+.dashboard{
+    max-width:1450px;
+    margin:auto;
+}
+
+/* HEADER */
+
+.header{
+    background:linear-gradient(135deg,#172554,#2563eb);
+    color:white;
+    padding:28px 32px;
+    border-radius:20px;
+    margin-bottom:20px;
+    box-shadow:0 8px 25px rgba(37,99,235,.20);
+}
+
+.header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+}
+
+.header h1{
+    margin:0 0 8px;
+    font-size:30px;
+}
+
+.header p{
+    margin:0;
+    opacity:.9;
+}
+
+.live{
+    background:rgba(255,255,255,.18);
+    padding:12px 18px;
+    border-radius:25px;
+    white-space:nowrap;
+}
+
+/* FILTERS */
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:18px;
+    box-shadow:0 4px 15px rgba(15,23,42,.06);
+}
+
+.filter-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:16px;
+}
+
+.filter label{
+    display:block;
+    font-size:13px;
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+select{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    background:white;
+    font-size:14px;
+}
+
+.reset{
+    margin-top:18px;
+    padding:11px 18px;
+    border:0;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.reset:hover{
+    background:#1d4ed8;
+}
+
+/* KPI */
+
+.kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+    margin-bottom:18px;
+}
+
+.kpi{
+    background:white;
+    padding:22px;
+    border-radius:18px;
+    box-shadow:0 4px 15px rgba(15,23,42,.06);
+}
+
+.kpi-title{
+    font-size:13px;
+    color:#64748b;
+    font-weight:bold;
+    text-transform:uppercase;
+}
+
+.kpi-value{
+    font-size:25px;
+    font-weight:bold;
+    margin-top:10px;
+    color:#172554;
+}
+
+.kpi-sub{
+    color:#94a3b8;
+    font-size:12px;
+    margin-top:6px;
+}
+
+/* CHART GRID */
+
+.chart-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:18px;
+}
+
+.chart-card{
+    background:white;
+    border-radius:18px;
+    padding:22px;
+    box-shadow:0 4px 15px rgba(15,23,42,.06);
+    margin-bottom:18px;
+}
+
+.chart-title{
+    font-size:19px;
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+.chart-subtitle{
+    font-size:12px;
+    color:#94a3b8;
+    margin-bottom:18px;
+}
+
+/* LINE CHART */
+
+.line-chart{
+    width:100%;
+    height:280px;
+    position:relative;
+}
+
+.line-svg{
+    width:100%;
+    height:240px;
+    overflow:visible;
+}
+
+.axis-label{
+    font-size:11px;
+    fill:#64748b;
+}
+
+/* BARS */
+
+.bar-row{
+    margin-bottom:16px;
+}
+
+.bar-header{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+.bar-name{
+    font-weight:bold;
+}
+
+.bar-value{
+    color:#475569;
+}
+
+.bar-background{
+    width:100%;
+    height:12px;
+    background:#e2e8f0;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.bar-fill{
+    height:100%;
+    border-radius:20px;
+    background:linear-gradient(90deg,#2563eb,#60a5fa);
+}
+
+/* STATUS */
+
+.status-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+}
+
+.status-box{
+    padding:18px 10px;
+    border-radius:14px;
+    text-align:center;
+}
+
+.status-number{
+    font-size:25px;
+    font-weight:bold;
+}
+
+.status-label{
+    font-size:12px;
+    margin-top:5px;
+}
+
+/* DONUT */
+
+.donut-area{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:30px;
+    min-height:250px;
+}
+
+.donut{
+    width:180px;
+    height:180px;
+    border-radius:50%;
+    position:relative;
+}
+
+.donut::after{
+    content:"";
+    position:absolute;
+    width:100px;
+    height:100px;
+    background:white;
+    border-radius:50%;
+    top:40px;
+    left:40px;
+}
+
+.legend{
+    font-size:13px;
+}
+
+.legend-item{
+    display:flex;
+    align-items:center;
+    margin:10px 0;
+}
+
+.legend-color{
+    width:12px;
+    height:12px;
+    border-radius:3px;
+    margin-right:8px;
+}
+
+/* PERFORMERS */
+
+.performer-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+}
+
+.performer{
+    background:#f8fafc;
+    padding:18px;
+    border-radius:14px;
+    border-left:4px solid #2563eb;
+}
+
+.performer-title{
+    color:#64748b;
+    font-size:12px;
+}
+
+.performer-value{
+    margin-top:8px;
+    font-size:17px;
+    font-weight:bold;
+}
+
+/* FOOTER */
+
+.footer{
+    text-align:center;
+    padding:25px;
+    color:#94a3b8;
+    font-size:12px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:1000px){
+
+    .filter-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .kpi-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .chart-grid{
+        grid-template-columns:1fr;
+    }
+
+    .performer-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:600px){
+
+    body{
+        padding:12px;
+    }
+
+    .filter-grid{
+        grid-template-columns:1fr;
+    }
+
+    .kpi-grid{
+        grid-template-columns:1fr;
+    }
+
+    .performer-grid{
+        grid-template-columns:1fr;
+    }
+
+    .status-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .header-row{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+}
+
+
+/* AI ANALYSIS */
+.ai-section{margin-top:18px;}
+.ai-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;}
+.ai-badge{background:#ede9fe;color:#6d28d9;border-radius:999px;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.ai-health-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:4px 0 18px;}
+.ai-health-card{background:#f8fafc;border-radius:14px;padding:17px;border:1px solid #e2e8f0;}
+.ai-health-label{font-size:11px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:.4px;}
+.ai-health-value{font-size:22px;font-weight:800;color:#172554;margin-top:7px;}
+.ai-risk-value{font-size:22px;font-weight:800;margin-top:7px;color:#64748b;}
+.ai-health-note{font-size:11px;color:#94a3b8;margin-top:5px;line-height:1.4;}
+.ai-progress{height:8px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:10px;}
+.ai-progress>div{height:100%;width:0%;border-radius:20px;background:#2563eb;transition:width .35s ease;}
+.ai-summary{background:#f8fafc;border-radius:14px;padding:20px;margin-bottom:18px;border-left:4px solid #2563eb;}
+.ai-summary h3{margin-top:0;margin-bottom:10px;}
+.ai-summary p{margin:0;line-height:1.7;color:#475569;}
+.ai-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.ai-box{padding:20px;border-radius:14px;background:#f8fafc;}
+.ai-box h3{margin-top:0;margin-bottom:12px;}
+.ai-box ul{margin:0;padding-left:20px;}
+.ai-box li{margin-bottom:9px;line-height:1.5;color:#475569;}
+.findings{border-left:4px solid #2563eb;}
+.risks{border-left:4px solid #dc2626;}
+.opportunities{border-left:4px solid #16a34a;}
+.recommendations{border-left:4px solid #9333ea;}
+.ai-footer-note{display:flex;justify-content:space-between;gap:12px;margin-top:14px;color:#94a3b8;font-size:11px;}
+@media(max-width:1000px){.ai-health-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:700px){.ai-grid{grid-template-columns:1fr;}.ai-head{flex-direction:column;}.ai-health-grid{grid-template-columns:1fr 1fr;}.ai-footer-note{flex-direction:column;}}
+@media(max-width:500px){.ai-health-grid{grid-template-columns:1fr;}}
+
+/* ANOMALY + EXPORT TOOLS */
+.dashboard-tools{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin:0 0 18px;}
+.tool-btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;font-size:13px;}
+.tool-btn.primary{background:#2563eb;color:white;}
+.tool-btn.secondary{background:#e2e8f0;color:#172554;}
+.tool-btn:hover{opacity:.9;}
+.anomaly-card{margin-top:18px;background:#f8fafc;border-radius:14px;padding:20px;border-left:4px solid #f59e0b;}
+.anomaly-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;}
+.anomaly-count{background:#fef3c7;color:#92400e;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;}
+.anomaly-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.anomaly-item{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px;}
+.anomaly-item strong{display:block;color:#172554;margin-bottom:4px;}
+.anomaly-item span{font-size:12px;color:#64748b;line-height:1.5;}
+.anomaly-empty{color:#16a34a;font-weight:700;}
+@media(max-width:700px){.anomaly-list{grid-template-columns:1fr;}.dashboard-tools{justify-content:flex-start;}}
+@media print{body{background:white;padding:0;}.dashboard-tools,.reset,.live{display:none !important;}.card,.chart-card,.kpi,.performer{box-shadow:none;border:1px solid #e2e8f0;}.header{break-inside:avoid;}}
+</style>
+</head>
+
+
+<body>
+
+<div class="dashboard">
+
+<!-- HEADER -->
+
+<div class="header">
+
+    <div class="header-row">
+
+        <div>
+            <h1>📊 E-Commerce Analytics Dashboard</h1>
+
+            <p>
+                Interactive Business Intelligence Dashboard
+                • n8n + Python + JavaScript
+            </p>
+        </div>
+
+        <div class="live">
+            ● LIVE
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- FILTERS -->
+
+<div class="card">
+
+    <h2>🎛️ Dashboard Filters</h2>
+
+    <div class="filter-grid">
+
+        <div class="filter">
+
+            <label>Month</label>
+
+            <select id="monthFilter">
+                <option value="">All Months</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter">
+
+            <label>Category</label>
+
+            <select id="categoryFilter">
+                <option value="">All Categories</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter">
+
+            <label>Sales Channel</label>
+
+            <select id="channelFilter">
+                <option value="">All Channels</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter">
+
+            <label>Payment Method</label>
+
+            <select id="paymentFilter">
+                <option value="">All Payments</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter">
+
+            <label>Order Status</label>
+
+            <select id="statusFilter">
+                <option value="">All Statuses</option>
+            </select>
+
+        </div>
+
+    </div>
+
+
+    <button class="reset" onclick="resetFilters()">
+        ↻ Reset Filters
+    </button>
+
+</div>
+
+
+<!-- DASHBOARD TOOLS -->
+<div class="dashboard-tools">
+    <button class="tool-btn primary" onclick="exportFilteredCSV()">⬇️ Export Filtered CSV</button>
+    <button class="tool-btn secondary" onclick="printDashboardReport()">🖨️ Print / Save Report</button>
+</div>
+
+<!-- KPI -->
+
+<div class="kpi-grid">
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Net Sales
+        </div>
+
+        <div class="kpi-value" id="netSales">
+            ₹0
+        </div>
+
+        <div class="kpi-sub">
+            Filtered revenue
+        </div>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Orders
+        </div>
+
+        <div class="kpi-value" id="orders">
+            0
+        </div>
+
+        <div class="kpi-sub">
+            Filtered orders
+        </div>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Quantity
+        </div>
+
+        <div class="kpi-value" id="quantity">
+            0
+        </div>
+
+        <div class="kpi-sub">
+            Units sold
+        </div>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Average Order Value
+        </div>
+
+        <div class="kpi-value" id="aov">
+            ₹0
+        </div>
+
+        <div class="kpi-sub">
+            Sales ÷ orders
+        </div>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Gross Sales
+        </div>
+
+        <div class="kpi-value" id="grossSales">
+            ₹0
+        </div>
+
+        <div class="kpi-sub">
+            Before discounts
+        </div>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Discount
+        </div>
+
+        <div class="kpi-value" id="discount">
+            ₹0
+        </div>
+
+        <div class="kpi-sub">
+            Discount amount
+        </div>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Return Rate
+        </div>
+
+        <div class="kpi-value" id="returnRate">
+            0%
+        </div>
+
+        <div class="kpi-sub">
+            Returned orders
+        </div>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <div class="kpi-title">
+            Cancellation Rate
+        </div>
+
+        <div class="kpi-value" id="cancelRate">
+            0%
+        </div>
+
+        <div class="kpi-sub">
+            Cancelled orders
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- SALES TREND + STATUS -->
+
+<div class="chart-grid">
+
+    <div class="chart-card">
+
+        <div class="chart-title">
+            📈 Monthly Sales Trend
+        </div>
+
+        <div class="chart-subtitle">
+            Net sales for the selected data
+        </div>
+
+        <div class="line-chart">
+
+            <svg
+                id="salesChart"
+                class="line-svg"
+                viewBox="0 0 900 250"
+                preserveAspectRatio="none">
+            </svg>
+
+        </div>
+
+    </div>
+
+
+    <div class="chart-card">
+
+        <div class="chart-title">
+            📦 Order Status
+        </div>
+
+        <div class="chart-subtitle">
+            Current order distribution
+        </div>
+
+        <div id="statusChart"
+             class="donut-area">
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- PRODUCT + CATEGORY -->
+
+<div class="chart-grid">
+
+    <div class="chart-card">
+
+        <div class="chart-title">
+            🏆 Top 5 Products
+        </div>
+
+        <div class="chart-subtitle">
+            Products ranked by net sales
+        </div>
+
+        <div id="productChart"></div>
+
+    </div>
+
+
+    <div class="chart-card">
+
+        <div class="chart-title">
+            🏷️ Sales by Category
+        </div>
+
+        <div class="chart-subtitle">
+            Category performance
+        </div>
+
+        <div id="categoryChart"></div>
+
+    </div>
+
+</div>
+
+
+<!-- CHANNEL -->
+
+<div class="chart-card">
+
+    <div class="chart-title">
+        🌐 Sales by Channel
+    </div>
+
+    <div class="chart-subtitle">
+        Net sales distribution across channels
+    </div>
+
+    <div id="channelChart"></div>
+
+</div>
+
+
+<!-- PERFORMERS -->
+
+<div class="chart-card">
+
+    <div class="chart-title">
+        ⭐ Top Performers
+    </div>
+
+    <div class="chart-subtitle">
+        Best performing dimensions
+    </div>
+
+
+    <div class="performer-grid">
+
+        <div class="performer">
+
+            <div class="performer-title">
+                Top Category
+            </div>
+
+            <div class="performer-value"
+                 id="topCategory">
+                -
+            </div>
+
+        </div>
+
+
+        <div class="performer">
+
+            <div class="performer-title">
+                Top Product
+            </div>
+
+            <div class="performer-value"
+                 id="topProduct">
+                -
+            </div>
+
+        </div>
+
+
+        <div class="performer">
+
+            <div class="performer-title">
+                Top Channel
+            </div>
+
+            <div class="performer-value"
+                 id="topChannel">
+                -
+            </div>
+
+        </div>
+
+
+        <div class="performer">
+
+            <div class="performer-title">
+                Top Payment
+            </div>
+
+            <div class="performer-value"
+                 id="topPayment">
+                -
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- AI ANALYSIS -->
+<div class="chart-card ai-section">
+  <div class="ai-head">
+    <div>
+      <div class="chart-title">🤖 AI Business Analysis</div>
+      <div class="chart-subtitle">Automated business analysis generated by Gemini AI</div>
+    </div>
+    <div class="ai-badge">GEMINI AI</div>
+  </div>
+
+  <div class="ai-health-grid">
+    <div class="ai-health-card">
+      <div class="ai-health-label">Business Health</div>
+      <div class="ai-health-value" id="aiHealthScore">0/100</div>
+      <div class="ai-progress"><div id="aiHealthBar"></div></div>
+      <div class="ai-health-note" id="aiHealthNote">Calculating from selected data...</div>
+    </div>
+    <div class="ai-health-card">
+      <div class="ai-health-label">Risk Level</div>
+      <div class="ai-risk-value" id="aiRiskLevel">—</div>
+      <div class="ai-health-note">Based on return + cancellation rate</div>
+    </div>
+    <div class="ai-health-card">
+      <div class="ai-health-label">Filtered Revenue</div>
+      <div class="ai-health-value" id="aiRevenue">₹0</div>
+      <div class="ai-health-note">Net sales for selected filters</div>
+    </div>
+    <div class="ai-health-card">
+      <div class="ai-health-label">Data Records</div>
+      <div class="ai-health-value" id="aiRecords">0</div>
+      <div class="ai-health-note">Rows used for this view</div>
+    </div>
+  </div>
+
+  <div class="ai-summary">
+    <h3>📌 Executive Summary</h3>
+    <p id="aiSummary">Loading AI analysis...</p>
+  </div>
+
+  <div class="ai-grid">
+    <div class="ai-box findings"><h3>🔎 Key Findings</h3><ul id="aiFindings"></ul></div>
+    <div class="ai-box risks"><h3>⚠️ Risks</h3><ul id="aiRisks"></ul></div>
+    <div class="ai-box opportunities"><h3>💡 Opportunities</h3><ul id="aiOpportunities"></ul></div>
+    <div class="ai-box recommendations"><h3>🎯 Priority Recommendations</h3><ul id="aiRecommendations"></ul></div>
+  </div>
+
+  <div class="anomaly-card">
+    <div class="anomaly-head">
+      <div>
+        <h3 style="margin:0 0 4px;">🚨 Data Anomaly Detection</h3>
+        <div class="chart-subtitle" style="margin:0;">Automatic checks for unusual sales and invalid transaction values</div>
+      </div>
+      <div class="anomaly-count" id="anomalyCount">0 anomalies</div>
+    </div>
+    <div id="anomalyList" class="anomaly-list"></div>
+  </div>
+
+  <div class="ai-footer-note">
+    <span>🧠 AI-generated insights</span>
+    <span id="aiConfidence">AI confidence: Not provided by model</span>
+  </div>
+</div>
+
+<div class="footer">
+
+    E-Commerce Analytics Dashboard<br>
+    Generated automatically by n8n • AI E-Commerce Data Analyst
+
+</div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   DATA FROM n8n
+   ============================================================ */
+
+const rows = {{ JSON.stringify($json.rows || []) }};
+
+/* AI AGENT DATA */
+let aiData = {};
+const aiRaw = {{ JSON.stringify($json.output || "") }};
+try {
+  if (typeof aiRaw === "string") {
+    let cleaned = aiRaw.trim()
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    aiData = JSON.parse(cleaned);
+  } else if (aiRaw && typeof aiRaw === "object") {
+    aiData = aiRaw;
+  }
+} catch(error) {
+  console.log("AI JSON parsing error:", error);
+  aiData = {};
+}
+
+
+/* ============================================================
+   HELPER FUNCTIONS
+   ============================================================ */
+
+function number(value){
+
+    const n = Number(value);
+
+    return Number.isFinite(n) ? n : 0;
+
+}
+
+
+function money(value){
+
+    return new Intl.NumberFormat(
+        "en-IN",
+        {
+            style:"currency",
+            currency:"INR",
+            maximumFractionDigits:2
+        }
+    ).format(number(value));
+
+}
+
+
+function integer(value){
+
+    return new Intl.NumberFormat(
+        "en-IN"
+    ).format(Math.round(number(value)));
+
+}
+
+
+function percentage(value){
+
+    return number(value).toFixed(2) + "%";
+
+}
+
+
+function getMonth(date){
+
+    if(!date) return "Unknown";
+
+    const d = new Date(date);
+
+    if(isNaN(d.getTime())){
+
+        return String(date).substring(0,7);
+
+    }
+
+    return d.toLocaleString(
+        "en-IN",
+        {
+            month:"short",
+            year:"numeric"
+        }
+    );
+
+}
+
+
+/* ============================================================
+   FILTER DATA
+   ============================================================ */
+
+function populateFilters(){
+
+    const months = new Set();
+    const categories = new Set();
+    const channels = new Set();
+    const payments = new Set();
+    const statuses = new Set();
+
+
+    rows.forEach(row => {
+
+        months.add(
+            getMonth(row.Order_Date)
+        );
+
+        if(row.Category)
+            categories.add(row.Category);
+
+        if(row.Sales_Channel)
+            channels.add(row.Sales_Channel);
+
+        if(row.Payment_Method)
+            payments.add(row.Payment_Method);
+
+        if(row.Order_Status)
+            statuses.add(row.Order_Status);
+
+    });
+
+
+    fillSelect(
+        "monthFilter",
+        [...months].sort()
+    );
+
+    fillSelect(
+        "categoryFilter",
+        [...categories].sort()
+    );
+
+    fillSelect(
+        "channelFilter",
+        [...channels].sort()
+    );
+
+    fillSelect(
+        "paymentFilter",
+        [...payments].sort()
+    );
+
+    fillSelect(
+        "statusFilter",
+        [...statuses].sort()
+    );
+
+}
+
+
+function fillSelect(id, values){
+
+    const select = document.getElementById(id);
+
+    values.forEach(value => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = value;
+        option.textContent = value;
+
+        select.appendChild(option);
+
+    });
+
+}
+
+
+/* ============================================================
+   GET FILTERED DATA
+   ============================================================ */
+
+function getFilteredRows(){
+
+    const month =
+        document.getElementById("monthFilter").value;
+
+    const category =
+        document.getElementById("categoryFilter").value;
+
+    const channel =
+        document.getElementById("channelFilter").value;
+
+    const payment =
+        document.getElementById("paymentFilter").value;
+
+    const status =
+        document.getElementById("statusFilter").value;
+
+
+    return rows.filter(row => {
+
+        const rowMonth =
+            getMonth(row.Order_Date);
+
+
+        return (
+
+            (!month || rowMonth === month)
+
+            &&
+
+            (!category ||
+             row.Category === category)
+
+            &&
+
+            (!channel ||
+             row.Sales_Channel === channel)
+
+            &&
+
+            (!payment ||
+             row.Payment_Method === payment)
+
+            &&
+
+            (!status ||
+             row.Order_Status === status)
+
+        );
+
+    });
+
+}
+
+
+/* ============================================================
+   KPI CALCULATION
+   ============================================================ */
+
+function calculateKPIs(data){
+
+    let netSales = 0;
+    let grossSales = 0;
+    let discount = 0;
+    let quantity = 0;
+
+    let returned = 0;
+    let cancelled = 0;
+
+
+    data.forEach(row => {
+
+        netSales += number(row.Net_Sales);
+
+        grossSales += number(row.Gross_Sales);
+
+        discount += number(row.Discount_Amount);
+
+        quantity += number(row.Quantity);
+
+
+        if(
+            String(row.Order_Status)
+            .toLowerCase()
+            === "returned"
+        ){
+
+            returned++;
+
+        }
+
+
+        if(
+            String(row.Order_Status)
+            .toLowerCase()
+            === "cancelled"
+        ){
+
+            cancelled++;
+
+        }
+
+    });
+
+
+    const orders = data.length;
+
+    const aov =
+        orders > 0
+        ? netSales / orders
+        : 0;
+
+
+    const returnRate =
+        orders > 0
+        ? returned / orders * 100
+        : 0;
+
+
+    const cancelRate =
+        orders > 0
+        ? cancelled / orders * 100
+        : 0;
+
+
+    document.getElementById("netSales")
+        .textContent = money(netSales);
+
+    document.getElementById("orders")
+        .textContent = integer(orders);
+
+    document.getElementById("quantity")
+        .textContent = integer(quantity);
+
+    document.getElementById("aov")
+        .textContent = money(aov);
+
+    document.getElementById("grossSales")
+        .textContent = money(grossSales);
+
+    document.getElementById("discount")
+        .textContent = money(discount);
+
+    document.getElementById("returnRate")
+        .textContent = percentage(returnRate);
+
+    document.getElementById("cancelRate")
+        .textContent = percentage(cancelRate);
+
+}
+
+
+/* ============================================================
+   GROUPING FUNCTION
+   ============================================================ */
+
+function groupSales(data, field){
+
+    const result = {};
+
+
+    data.forEach(row => {
+
+        const key =
+            row[field] || "Unknown";
+
+
+        if(!result[key])
+            result[key] = 0;
+
+
+        result[key] +=
+            number(row.Net_Sales);
+
+    });
+
+
+    return result;
+
+}
+
+
+/* ============================================================
+   MONTHLY SALES CHART
+   ============================================================ */
+
+function renderSalesTrend(data){
+
+    const svg =
+        document.getElementById("salesChart");
+
+    svg.innerHTML = "";
+
+
+    const monthly = {};
+
+
+    data.forEach(row => {
+
+        const month =
+            getMonth(row.Order_Date);
+
+
+        if(!monthly[month])
+            monthly[month] = 0;
+
+
+        monthly[month] +=
+            number(row.Net_Sales);
+
+    });
+
+
+    const entries =
+        Object.entries(monthly)
+        .sort((a,b) =>
+            new Date(a[0]) - new Date(b[0])
+        );
+
+
+    if(entries.length === 0){
+
+        svg.innerHTML =
+            `<text x="450" y="120"
+             text-anchor="middle"
+             fill="#94a3b8">
+             No data available
+             </text>`;
+
+        return;
+
+    }
+
+
+    const width = 900;
+    const height = 230;
+
+    const paddingX = 55;
+    const paddingY = 25;
+
+
+    const values =
+        entries.map(x => x[1]);
+
+
+    const max =
+        Math.max(...values,1);
+
+
+    const points =
+        entries.map((entry,index) => {
+
+            const x =
+                paddingX +
+                index *
+                ((width-paddingX*2) /
+                Math.max(entries.length-1,1));
+
+
+            const y =
+                height -
+                paddingY -
+                (entry[1]/max) *
+                (height-paddingY*2);
+
+
+            return {
+                x,
+                y,
+                value:entry[1],
+                label:entry[0]
+            };
+
+        });
+
+
+    /* GRID */
+
+    for(let i=0;i<5;i++){
+
+        const y =
+            paddingY +
+            i *
+            ((height-paddingY*2)/4);
+
+
+        svg.innerHTML +=
+        `<line
+            x1="${paddingX}"
+            y1="${y}"
+            x2="${width-paddingX}"
+            y2="${y}"
+            stroke="#e2e8f0"
+            stroke-width="1"
+        />`;
+
+    }
+
+
+    /* AREA */
+
+    const areaPoints =
+        [
+            `${points[0].x},${height-paddingY}`,
+            ...points.map(p =>
+                `${p.x},${p.y}`
+            ),
+            `${points[points.length-1].x},${height-paddingY}`
+        ].join(" ");
+
+
+    svg.innerHTML +=
+    `<polygon
+        points="${areaPoints}"
+        fill="#dbeafe"
+        opacity="0.7"
+    />`;
+
+
+    /* LINE */
+
+    const linePoints =
+        points
+        .map(p => `${p.x},${p.y}`)
+        .join(" ");
+
+
+    svg.innerHTML +=
+    `<polyline
+        points="${linePoints}"
+        fill="none"
+        stroke="#2563eb"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />`;
+
+
+    /* POINTS */
+
+    points.forEach(p => {
+
+        svg.innerHTML +=
+        `<circle
+            cx="${p.x}"
+            cy="${p.y}"
+            r="5"
+            fill="#2563eb"
+        />`;
+
+    });
+
+
+    /* LABELS */
+
+    points.forEach((p,index) => {
+
+        if(
+            entries.length <= 12
+            ||
+            index % Math.ceil(entries.length/8) === 0
+            ||
+            index === points.length-1
+        ){
+
+            svg.innerHTML +=
+            `<text
+                x="${p.x}"
+                y="220"
+                text-anchor="middle"
+                class="axis-label"
+            >
+                ${p.label}
+            </text>`;
+
+        }
+
+    });
+
+}
+
+
+/* ============================================================
+   BAR CHART
+   ============================================================ */
+
+function renderBars(
+    containerId,
+    data,
+    limit = 10
+){
+
+    const container =
+        document.getElementById(containerId);
+
+
+    const entries =
+        Object.entries(data)
+        .sort((a,b) => b[1]-a[1])
+        .slice(0,limit);
+
+
+    container.innerHTML = "";
+
+
+    if(entries.length === 0){
+
+        container.innerHTML =
+            `<p style="color:#94a3b8">
+                No data available
+            </p>`;
+
+        return;
+
+    }
+
+
+    const max =
+        Math.max(...entries.map(x => x[1]),1);
+
+
+    entries.forEach(entry => {
+
+        const name = entry[0];
+        const value = entry[1];
+
+
+        const width =
+            (value/max)*100;
+
+
+        container.innerHTML += `
+
+        <div class="bar-row">
+
+            <div class="bar-header">
+
+                <span class="bar-name">
+                    ${name}
+                </span>
+
+                <span class="bar-value">
+                    ${money(value)}
+                </span>
+
+            </div>
+
+
+            <div class="bar-background">
+
+                <div
+                    class="bar-fill"
+                    style="width:${width}%">
+                </div>
+
+            </div>
+
+        </div>
+
+        `;
+
+    });
+
+}
+
+
+/* ============================================================
+   STATUS CHART
+   ============================================================ */
+
+function renderStatusChart(data){
+
+    const container =
+        document.getElementById("statusChart");
+
+
+    const counts = {};
+
+
+    data.forEach(row => {
+
+        const status =
+            row.Order_Status || "Unknown";
+
+
+        counts[status] =
+            (counts[status] || 0) + 1;
+
+    });
+
+
+    const entries =
+        Object.entries(counts);
+
+
+    if(entries.length === 0){
+
+        container.innerHTML =
+            "<p>No data available</p>";
+
+        return;
+
+    }
+
+
+    const total =
+        entries.reduce(
+            (sum,x) => sum+x[1],
+            0
+        );
+
+
+    const colors = [
+        "#2563eb",
+        "#16a34a",
+        "#f97316",
+        "#dc2626",
+        "#9333ea",
+        "#0891b2"
+    ];
+
+
+    let current = 0;
+
+    const gradients = [];
+
+
+    entries.forEach((entry,index) => {
+
+        const percentage =
+            entry[1]/total*100;
+
+
+        const start = current;
+
+        const end =
+            current + percentage;
+
+
+        gradients.push(
+            `${colors[index % colors.length]}
+             ${start}% ${end}%`
+        );
+
+
+        current = end;
+
+    });
+
+
+    container.innerHTML = `
+
+        <div
+            class="donut"
+            style="
+                background:
+                conic-gradient(
+                    ${gradients.join(",")}
+                );
+            ">
+        </div>
+
+
+        <div class="legend">
+
+            ${
+                entries.map((entry,index) => `
+
+                    <div class="legend-item">
+
+                        <span
+                            class="legend-color"
+                            style="
+                                background:
+                                ${colors[index % colors.length]}
+                            ">
+                        </span>
+
+                        <span>
+                            ${entry[0]}:
+                            ${entry[1]}
+                        </span>
+
+                    </div>
+
+                `).join("")
+            }
+
+        </div>
+
+    `;
+
+}
+
+
+/* ============================================================
+   TOP PERFORMERS
+   ============================================================ */
+
+function renderPerformers(data){
+
+    const category =
+        getTop(data,"Category");
+
+    const product =
+        getTop(data,"Product");
+
+    const channel =
+        getTop(data,"Sales_Channel");
+
+    const payment =
+        getTop(data,"Payment_Method");
+
+
+    document.getElementById("topCategory")
+        .textContent =
+        category ? category[0] : "-";
+
+
+    document.getElementById("topProduct")
+        .textContent =
+        product ? product[0] : "-";
+
+
+    document.getElementById("topChannel")
+        .textContent =
+        channel ? channel[0] : "-";
+
+
+    document.getElementById("topPayment")
+        .textContent =
+        payment ? payment[0] : "-";
+
+}
+
+
+function getTop(data,field){
+
+    const grouped =
+        groupSales(data,field);
+
+
+    return Object.entries(grouped)
+        .sort((a,b)=>b[1]-a[1])[0];
+
+}
+
+
+/* AI ANALYSIS + BUSINESS HEALTH */
+function calculateBusinessHealth(data){
+  const orders = data.length;
+  if(!orders){
+    return {score:0, risk:"No Data", note:"Select data to calculate business health."};
+  }
+
+  let returned=0, cancelled=0;
+  data.forEach(row=>{
+    const status=String(row.Order_Status||"").toLowerCase();
+    if(status === "returned") returned++;
+    if(status === "cancelled") cancelled++;
+  });
+
+  const combinedRate=((returned+cancelled)/orders)*100;
+  const score=Math.max(0, Math.min(100, Math.round(100-(combinedRate*1.5))));
+  let risk="Low";
+  if(combinedRate>=30) risk="Critical";
+  else if(combinedRate>=20) risk="High";
+  else if(combinedRate>=10) risk="Medium";
+
+  const note=`Return + cancellation rate: ${combinedRate.toFixed(2)}%`;
+  return {score,risk,note};
+}
+
+function renderBusinessHealth(data){
+  const health=calculateBusinessHealth(data);
+  const netSales=data.reduce((sum,row)=>sum+number(row.Net_Sales),0);
+
+  document.getElementById("aiHealthScore").textContent=`${health.score}/100`;
+  document.getElementById("aiHealthBar").style.width=`${health.score}%`;
+  document.getElementById("aiHealthNote").textContent=health.note;
+  document.getElementById("aiRevenue").textContent=money(netSales);
+  document.getElementById("aiRecords").textContent=integer(data.length);
+
+  const riskEl=document.getElementById("aiRiskLevel");
+  riskEl.textContent=health.risk;
+  riskEl.style.color = health.risk === "Critical" ? "#b91c1c" :
+                        health.risk === "High" ? "#dc2626" :
+                        health.risk === "Medium" ? "#d97706" :
+                        health.risk === "Low" ? "#16a34a" : "#64748b";
+
+  const confidence=aiData.confidence || aiData.ai_confidence || aiData.confidence_score;
+  document.getElementById("aiConfidence").textContent =
+      confidence ? `AI confidence: ${confidence}` : "AI confidence: Not provided by model";
+}
+
+function renderAIAnalysis(data){
+  document.getElementById("aiSummary").textContent =
+      aiData.summary || "No AI summary available.";
+
+  renderAIList("aiFindings", aiData.key_findings);
+  renderAIList("aiRisks", aiData.risks);
+  renderAIList("aiOpportunities", aiData.opportunities);
+  renderAIList("aiRecommendations", aiData.recommendations);
+  renderBusinessHealth(data);
+}
+
+function renderAIList(elementId, items){
+  const container=document.getElementById(elementId);
+  container.innerHTML="";
+
+  if(!Array.isArray(items) || items.length===0){
+    container.innerHTML="<li>No information available.</li>";
+    return;
+  }
+
+  items.forEach((item,index)=>{
+    const li=document.createElement("li");
+    let text="";
+    let priority="";
+
+    if(typeof item === "object" && item !== null){
+      text=item.text || item.description || item.action || JSON.stringify(item);
+      priority=item.priority || item.urgency || "";
+    } else {
+      text=String(item);
+    }
+
+    if(elementId === "aiRecommendations") {
+      const label=priority ? ` [${priority}]` : ` [Action ${index+1}]`;
+      text += label;
+    }
+
+    li.textContent=text;
+    container.appendChild(li);
+  });
+}
+
+/* ============================================================
+   ANOMALY DETECTION
+   ============================================================ */
+function detectAnomalies(data){
+  const anomalies=[];
+  data.forEach((row,index)=>{
+    const qty=number(row.Quantity);
+    const price=number(row.Unit_Price);
+    const discount=number(row.Discount_Percent ?? row.Discount_Percentage);
+    const net=number(row.Net_Sales);
+    const order=row.Order_ID || `Row ${index+1}`;
+    if(qty < 0) anomalies.push({order,type:"Negative quantity",detail:`Quantity = ${qty}`});
+    if(price < 0) anomalies.push({order,type:"Negative unit price",detail:`Unit price = ${money(price)}`});
+    if(discount < 0 || discount > 100) anomalies.push({order,type:"Invalid discount",detail:`Discount = ${discount}%`});
+    const date=String(row.Order_Date||"").trim();
+    if(date && isNaN(new Date(date).getTime())) anomalies.push({order,type:"Invalid order date",detail:`Date = ${date}`});
+    if(!Number.isFinite(net)) anomalies.push({order,type:"Invalid net sales",detail:"Net sales is not numeric"});
+  });
+
+  const sales=data.map(r=>number(r.Net_Sales)).filter(Number.isFinite);
+  if(sales.length>=5){
+    const mean=sales.reduce((a,b)=>a+b,0)/sales.length;
+    const variance=sales.reduce((a,b)=>a+Math.pow(b-mean,2),0)/sales.length;
+    const sd=Math.sqrt(variance);
+    if(sd>0){
+      data.forEach(row=>{
+        const value=number(row.Net_Sales);
+        if(value > mean + 2*sd){
+          anomalies.push({order:row.Order_ID || "Unknown",type:"Unusually high net sales",detail:`Net sales = ${money(value)}`});
+        }
+      });
+    }
+  }
+  return anomalies;
+}
+
+function renderAnomalies(data){
+  const list=document.getElementById("anomalyList");
+  const count=document.getElementById("anomalyCount");
+  if(!list || !count) return;
+  const anomalies=detectAnomalies(data);
+  count.textContent=`${anomalies.length} anomal${anomalies.length===1?"y":"ies"}`;
+  list.innerHTML="";
+  if(anomalies.length===0){
+    list.innerHTML='<div class="anomaly-empty">✓ No major anomalies detected in the selected data.</div>';
+    return;
+  }
+  anomalies.slice(0,8).forEach(a=>{
+    const div=document.createElement("div");
+    div.className="anomaly-item";
+    div.innerHTML=`<strong>${a.type}</strong><span>${a.order} • ${a.detail}</span>`;
+    list.appendChild(div);
+  });
+  if(anomalies.length>8){
+    const more=document.createElement("div");
+    more.className="anomaly-item";
+    more.innerHTML=`<strong>+ ${anomalies.length-8} more</strong><span>Additional anomalies detected. Export the filtered CSV for detailed investigation.</span>`;
+    list.appendChild(more);
+  }
+}
+
+/* ============================================================
+   EXPORT + REPORT
+   ============================================================ */
+function csvEscape(value){
+  const text=String(value ?? "");
+  return '"'+text.replace(/"/g,'""')+'"';
+}
+
+function exportFilteredCSV(){
+  const data=getFilteredRows();
+  if(!data.length){ alert("No data available for the selected filters."); return; }
+  const headers=[...new Set(data.flatMap(row=>Object.keys(row)))];
+  const lines=[headers.map(csvEscape).join(",")];
+  data.forEach(row=>lines.push(headers.map(h=>csvEscape(row[h])).join(",")));
+  const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`ecommerce_filtered_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function printDashboardReport(){ window.print(); }
+
+/* ============================================================
+   RENDER DASHBOARD
+   ============================================================ */
+
+function renderDashboard(){
+
+    const filtered =
+        getFilteredRows();
+
+
+    calculateKPIs(filtered);
+
+
+    renderSalesTrend(filtered);
+
+
+    renderBars(
+        "productChart",
+        groupSales(filtered,"Product"),
+        5
+    );
+
+
+    renderBars(
+        "categoryChart",
+        groupSales(filtered,"Category"),
+        10
+    );
+
+
+    renderBars(
+        "channelChart",
+        groupSales(filtered,"Sales_Channel"),
+        10
+    );
+
+
+    renderStatusChart(filtered);
+
+
+    renderPerformers(filtered);
+    renderBusinessHealth(filtered);
+    renderAnomalies(filtered);
+
+}
+
+
+/* ============================================================
+   RESET FILTERS
+   ============================================================ */
+
+function resetFilters(){
+
+    document.getElementById("monthFilter")
+        .value = "";
+
+    document.getElementById("categoryFilter")
+        .value = "";
+
+    document.getElementById("channelFilter")
+        .value = "";
+
+    document.getElementById("paymentFilter")
+        .value = "";
+
+    document.getElementById("statusFilter")
+        .value = "";
+
+
+    renderDashboard();
+
+}
+
+
+/* ============================================================
+   FILTER EVENTS
+   ============================================================ */
+
+[
+    "monthFilter",
+    "categoryFilter",
+    "channelFilter",
+    "paymentFilter",
+    "statusFilter"
+
+].forEach(id => {
+
+    document.getElementById(id)
+        .addEventListener(
+            "change",
+            renderDashboard
+        );
+
+});
+
+
+/* ============================================================
+   START
+   ============================================================ */
+
+populateFilters();
+
+renderDashboard();
+
+renderAIAnalysis();
+
+</script>
+
+</body>
+
+</html>
